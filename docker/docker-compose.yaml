@@ -1,0 +1,28 @@
+name: sg-vln-hm3d
+services:
+  vln:
+    image: sg-vln:hm3d
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    working_dir: /workspace/SG-VLN
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    volumes:
+      - ..:/workspace/SG-VLN
+      - model_cache:/root/.cache
+      - ${DATASET_ROOT:?Set DATASET_ROOT to your dataset directory}:/datasets:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  model_cache:

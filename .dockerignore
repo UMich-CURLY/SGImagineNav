@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+**/*history
+**/__pycache__
+data
+dump*
+analysis
+third_party
+Grounded-Segment-Anything

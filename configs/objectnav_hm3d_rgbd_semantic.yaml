@@ -1,0 +1,46 @@
+# @package _global_
+
+defaults:
+  - /habitat: habitat_config_base
+  - /habitat/task: objectnav
+  - /habitat/simulator/sensor_setups@habitat.simulator.agents.main_agent: rgbds_agent
+  - /habitat/dataset/objectnav: hm3d
+  - _self_
+
+habitat:
+  environment:
+    iterator_options:
+      shuffle: false
+    max_episode_steps: 500
+  simulator:
+    turn_angle: 30
+    agents:
+      main_agent:
+        sim_sensors:
+          rgb_sensor:
+            width: 640
+            height: 480
+            hfov: 79
+            position: [0, 0.88, 0]
+          depth_sensor:
+            width: 640
+            height: 480
+            hfov: 79
+            # min_depth: 0.5 # default
+            min_depth: 0.0
+            max_depth: 5.0
+            position: [0, 0.88, 0]
+          semantic_sensor:
+            width: 640
+            height: 480
+            hfov: 79
+            position: [0, 0.88, 0]
+        height: 0.88
+        radius: 0.18
+    habitat_sim_v0:
+      gpu_device_id: 0
+      allow_sliding: True # default is False, vln-game uses True whcih makes the task easier
+  task: # zero out noise
+    base_noise: 0.0
+    base_angle_noise: 0.0
+  seed: 100

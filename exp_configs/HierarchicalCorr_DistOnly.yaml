@@ -1,0 +1,10 @@
+experiment_name: "[hierarcorr]mp3d_reasoning:obj_sg:node_score:distonly"
+evaluation: "local"          # Options: ["local", "remote"]
+reasoning: "both"            # Options: ["both", "room", "obj"]
+scenegraph: "node"           # Options: ["node", "both"]
+visualize: true             # Boolean flag
+split_l: 0                   # Integer: Start index for splitting
+split_r: 11                  # Integer: End index for splitting
+score_wo_room: true         # Boolean flag
+score_wo_graph: true        # Boolean flag
+score_wo_node: true         # Boolean flag

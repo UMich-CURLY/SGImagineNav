@@ -1,0 +1,42 @@
+experiment_name: "dummyname"
+evaluation: "local"          # Options: ["local", "remote"]
+reasoning: "both"            # Options: ["both", "room", "obj"]
+scenegraph: "node"           # Options: ["node", "both"]
+visualize: true             # Boolean flag
+split_l: 18                   # Integer: Start index for splitting
+split_r: 20                  # Integer: End index for splitting
+score_wo_room: false         
+score_wo_graph: false        # Boolean flag
+score_wo_node: false         # Boolean flag
+log_file: true
+#this file tests both the new tradeoff and path exploration
+# Modules 
+perception_module: "GTPerception"
+planner_module: "ImagineNavPlanner"
+
+# Utility function
+utility:
+  trade_off:
+    exploitation: 1.0
+    exploration: 1.0
+    distance: 0.05
+    schedule: "basic"
+  hierarchical:
+    room: false             # Boolean flag
+    region: false           # Boolean flag
+    object: true           # Boolean flag
+    perception_conf: false   # Boolean flag
+  exploitation:
+    mode: "graph"
+  exploration:
+    mode: "path" # "graph", "map", "geometric"
+    raycast_range: 96
+    fov: 3.14 #radians of visible fov during explore
+    grid_prior: 0.00002 #prior probability of target being in any grid
+    distance_decay: 0.01 #exponentially decay value of further grids 
+    step_discount: 0.997 #0.997 #discount factor per unit distance travelled into future
+
+
+  prediction: false        # Boolean flag
+  llm: "qwen2.5:7b"
+  prediction_mode: "Global"

@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process State Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding-bottom: 50px;
+        }
+
+        h1 {
+            color: #00b7ff;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .section-title {
+            color: #00b7ff;
+            margin: 10px 0;
+            font-size: 1.5em;
+        }
+
+        /* Mobile-friendly styles */
+        @media screen and (max-width: 768px) {
+            body {
+                margin: 5px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .section-title {
+                font-size: 1.2em;
+            }
+
+            .filter-buttons {
+                flex-wrap: wrap;
+            }
+
+            .filter-button {
+                margin-bottom: 5px;
+                padding: 6px 10px !important;
+                font-size: 12px !important;
+            }
+
+            .stats-summary {
+                flex-direction: column;
+                gap: 10px !important;
+            }
+
+            .results-table th,
+            .results-table td {
+                padding: 6px 5px !important;
+                font-size: 12px !important;
+            }
+
+            /* Show only most important columns on small screens */
+            .results-table th:nth-child(3),
+            .results-table td:nth-child(3),
+            .results-table th:nth-child(4),
+            .results-table td:nth-child(4),
+            .results-table th:nth-child(9),
+            .results-table td:nth-child(9) {
+                display: none;
+            }
+        }
+
+        /* Make sure table is scrollable on all devices */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Make video links more touch-friendly */
+        .results-table a {
+            display: inline-block;
+            background-color: #00b7ff;
+            color: #1e1e1e;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .results-table a:hover {
+            background-color: #0090cc;
+        }
+
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .image-wrapper {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .process-image {
+            width: 95vw;
+            max-width: 1200px;
+            border: 1px solid #444;
+        }
+
+        .process-title {
+            margin: 5px 0 10px 0;
+            font-weight: bold;
+            color: #00b7ff;
+        }
+
+        .log-container {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+            width: 95vw;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-content {
+            font-family: 'Consolas', monospace;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            color: #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+
+        .filter-button {
+            background-color: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .filter-button:hover {
+            background-color: #444;
+        }
+
+        .filter-button.active {
+            background-color: #00b7ff;
+            color: #1e1e1e;
+            border-color: #00b7ff;
+            font-weight: bold;
+        }
+
+        .filter-button.commit {
+            border-color: #4caf50;
+            color: #4caf50;
+        }
+
+        .filter-button.checkpoint {
+            border-color: #ffc107;
+            color: #ffc107;
+        }
+
+        .filter-button.error {
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .filter-button.commit.active {
+            background-color: #4caf50;
+            color: #1e1e1e;
+        }
+
+        .filter-button.checkpoint.active {
+            background-color: #ffc107;
+            color: #1e1e1e;
+        }
+
+        .filter-button.error.active {
+            background-color: #f44336;
+            color: #1e1e1e;
+        }
+
+        .highlight {
+            background-color: rgba(0, 183, 255, 0.2);
+            color: #fff;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        .highlight-checkpoint {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            padding: 0 2px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .highlight-commit {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            padding: 0 2px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .table-container {
+            width: 95vw;
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow-x: auto;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #e0e0e0;
+            font-family: 'Consolas', monospace;
+        }
+
+        .results-table th {
+            background-color: #1e1e1e;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 2px solid #00b7ff;
+            position: sticky;
+            top: 0;
+        }
+
+        .results-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .results-table tr:hover {
+            background-color: #3a3a3a;
+        }
+
+        .stats-container {
+            width: 95vw;
+            max-width: 1200px;
+            margin: 0 auto 15px auto;
+            padding: 15px;
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-summary {
+            display: flex;
+            gap: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #4caf50;
+        }
+
+        .failure {
+            color: #f44336;
+        }
+
+        .details-column {
+            display: none;
+        }
+
+        .details-column.visible {
+            display: table-cell;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>SG-VLN Monitor</h1>
+    <div class="container">
+        <div class="section">
+            <div class="section-title">Logs</div>
+            <div class="filter-buttons">
+                <button id="filter-all" class="filter-button active">All</button>
+                <button id="filter-error" class="filter-button error">Errors</button>
+                <button id="filter-db" class="filter-button">[db]</button>
+                <button id="filter-commit" class="filter-button commit">Commit</button>
+                <button id="filter-checkpoint" class="filter-button checkpoint">Checkpoint</button>
+            </div>
+            <div class="log-container">
+                <div id="unified-log-content" class="log-content">Loading logs...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Episode Results</div>
+            <div class="stats-container">
+                <div class="stats-summary">
+                    <div id="episode-count">Episodes: 0</div>
+                    <div id="success-rate">Success Rate: Calculating...</div>
+                    <div id="mean-spl">Mean SPL: Calculating...</div>
+                    <button id="toggle-details" class="filter-button">Show Details</button>
+                </div>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="results-table" class="results-table">
+                <thead>
+                    <tr>
+                        <th>Video</th>
+                        <th>Episode</th>
+                        <th>Habitat Success</th>
+                        <th>Distance to Goal</th>
+                        <th>Success</th>
+                        <th>SPL</th>
+                        <th>Soft SPL</th>
+                        <th>Target</th>
+                        <th>Steps</th>
+                        <th class="details-column">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="10">Loading episode data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Process Images</div>
+        <div id="image-container" class="image-container">
+            <!-- Images will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Bottom margin space -->
+    <div style="height: 80px;"></div>
+    </div>
+
+    <script>
+        // Function to get all process IDs
+        async function getProcessIds() {
+            try {
+                // For demo purposes, we'll scan for process IDs 0 through 100
+                // We'll check if each file exists before adding it to the list
+                const maxProcessId = 32; // Increased range to capture all possible process IDs
+                const processIds = [];
+                const promises = [];
+
+                for (let i = 0; i <= maxProcessId; i++) {
+                    promises.push(
+                        new Promise(resolve => {
+                            const img = new Image();
+                            const url = `./episodes/current_state_process${i}.png`;
+                            img.onload = () => {
+                                processIds.push(i);
+                                resolve();
+                            };
+                            img.onerror = () => {
+                                // File does not exist or can't be loaded
+                                resolve();
+                            };
+                            img.src = url + '?check=' + new Date().getTime(); // Cache-busting
+                        })
+                    );
+                }
+
+                // Wait for all checks to complete
+                await Promise.all(promises);
+
+                // Sort the process IDs numerically
+                processIds.sort((a, b) => a - b);
+                return processIds;
+            } catch (error) {
+                console.error('Error getting process IDs:', error);
+                return [];
+            }
+        }
+
+        // Function to create or update the image elements
+        async function updateImages() {
+            const container = document.getElementById('image-container');
+            const processIds = await getProcessIds();
+
+            // Map existing wrappers for reuse
+            const existingWrappers = new Map();
+            Array.from(container.children).forEach(wrapper => {
+                const id = wrapper.dataset.processId;
+                if (id) existingWrappers.set(id, wrapper);
+            });
+
+            // Store the new wrapper order without clearing the container
+            const sortedWrappers = [];
+
+            // Create or update image elements for each process in sorted order
+            for (const id of processIds) {
+                const idString = id.toString();
+                let wrapper;
+
+                // Reuse existing wrapper if available to prevent layout shifts
+                if (existingWrappers.has(idString)) {
+                    wrapper = existingWrappers.get(idString);
+                    existingWrappers.delete(idString);  // Mark as processed
+                } else {
+                    // Create new wrapper if it doesn't exist
+                    wrapper = document.createElement('div');
+                    wrapper.className = 'image-wrapper';
+                    wrapper.dataset.processId = idString;
+                    wrapper.style.minHeight = '300px'; // Minimum height to reserve space
+
+                    // Create title
+                    const title = document.createElement('div');
+                    title.className = 'process-title';
+                    title.textContent = `Process ${id}`;
+                    wrapper.appendChild(title);
+                }
+
+                // Add to sorted array
+                sortedWrappers.push(wrapper);
+
+                // Function to create and load a new image
+                function createImage() {
+                    // Create new image in background with cache-busting
+                    const newImg = new Image();
+                    const timestamp = new Date().getTime();
+
+                    // Don't set fixed dimensions to preserve aspect ratio
+                    const existingImg = wrapper.querySelector('img');
+
+                    newImg.className = 'process-image';
+                    newImg.alt = `Process ${id} State`;
+
+                    // Reserve space with a container rather than explicit dimensions
+                    if (!existingImg) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'process-image';
+                        placeholder.style.minWidth = '95vw'; // Use same width as defined in CSS
+                        placeholder.style.maxWidth = '1200px'; // Use same max-width as defined in CSS
+                        placeholder.style.aspectRatio = '16 / 9'; // Use a default aspect ratio
+                        placeholder.style.background = '#222'; // Slightly lighter than background
+                        wrapper.appendChild(placeholder);
+                    }
+
+                    // Set up onload event to swap images only after loading completes
+                    newImg.onload = function () {
+                        // Replace the existing image with the new one only after it's loaded
+                        const existingImgs = wrapper.querySelectorAll('img');
+                        // Don't remove old image until new one is ready to prevent flicker
+                        existingImgs.forEach(img => img.remove());
+                        wrapper.appendChild(newImg);
+
+                        // Remove any placeholders
+                        const placeholders = wrapper.querySelectorAll('div.process-image');
+                        placeholders.forEach(p => p.remove());
+
+                        // Schedule next refresh for this specific image 5 second after loading
+                        setTimeout(() => {
+                            if (document.body.contains(wrapper)) {
+                                createImage();
+                            }
+                        }, 5000);
+                    };
+
+                    newImg.onerror = function () {
+                        // If image fails to load, keep the old image and wrapper
+                        console.log(`Failed to load image for process ${id}, keeping previous image`);
+
+                        // Remove any placeholders if there's already an image
+                        if (existingImg) {
+                            const placeholders = wrapper.querySelectorAll('div.process-image');
+                            placeholders.forEach(p => p.remove());
+                        }
+
+                        // Try again after a delay
+                        setTimeout(() => {
+                            if (document.body.contains(wrapper)) {
+                                createImage();
+                            }
+                        }, 5000);
+                    };
+
+                    // Start loading the image in the background
+                    newImg.src = `./episodes/current_state_process${id}.png?t=${timestamp}`;
+                }
+
+                // Initialize the image if it doesn't exist yet
+                if (!wrapper.querySelector('img')) {
+                    createImage();
+                }
+            };
+
+            // Carefully update the DOM to maintain positions
+            // First remove all wrappers from the container (without destroying them)
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+
+            // Add wrappers back in the correct order
+            sortedWrappers.forEach(wrapper => {
+                container.appendChild(wrapper);
+            });
+
+            // Remove any wrappers for processes that no longer exist
+            existingWrappers.forEach(wrapper => wrapper.remove());
+        }
+
+        // Define global log storage
+        let allLogLines = [];
+        let currentFilter = 'all';
+
+        // Function to apply highlighting to log lines
+        function processLogLine(line) {
+            let processed = line;
+            // Highlight brackets
+            processed = processed.replace(/\[(.*?)\]/g, '<span class="highlight">[$1]</span>');
+            // Highlight checkpoint words
+            processed = processed.replace(/checkpoint/gi, '<span class="highlight-checkpoint">checkpoint</span>');
+            // Highlight commit words
+            processed = processed.replace(/commit/gi, '<span class="highlight-commit">commit</span>');
+            return processed;
+        }
+
+        // Helper function to check if a line contains error content or starts a traceback
+        function isErrorLine(line) {
+            return line.toLowerCase().includes('error') ||
+                line.trim() === 'Traceback (most recent call last):' ||
+                /^exception in/i.test(line) ||
+                /^[a-zA-Z]+Error:/.test(line) ||
+                /^[a-zA-Z]+Exception:/.test(line);
+        }
+
+        // Helper function to get error trace
+        function getErrorTraceGroup(lines, startIndex) {
+            // This will collect the error line and its trace
+            const errorGroup = [];
+
+            // If this is a traceback header, look backward for potential context lines
+            if (lines[startIndex].trim() === 'Traceback (most recent call last):') {
+                // Look back up to 2 lines for context before the traceback
+                for (let j = 1; j <= 2; j++) {
+                    if (startIndex - j >= 0 && lines[startIndex - j].trim() !== '') {
+                        // Insert at beginning to maintain order
+                        errorGroup.unshift(lines[startIndex - j]);
+                    }
+                }
+            }
+
+            errorGroup.push(lines[startIndex]);
+
+            // If the current line is a traceback header, collect all the trace
+            const isTraceback = lines[startIndex].trim() === 'Traceback (most recent call last):';
+            let traceDepth = 0;
+
+            // Look for indented lines or lines with "at" or "traceback" patterns following the error
+            for (let i = startIndex + 1; i < lines.length; i++) {
+                const line = lines[i];
+
+                // Special handling for Python traceback patterns
+                if (isTraceback || traceDepth > 0) {
+                    // Python traceback lines typically start with spaces followed by "File "
+                    if (line.trim().startsWith('File "') || line.trim().match(/^\s+\w+/)) {
+                        errorGroup.push(line);
+                        traceDepth++;
+                        continue;
+                    }
+                    // Error type and message line (usually the last line in the trace)
+                    else if (line.match(/^[A-Z]\w+(Error|Exception):/)) {
+                        errorGroup.push(line);
+                        // Look ahead for additional context after the error message
+                        if (i + 1 < lines.length && !isErrorLine(lines[i + 1]) && !lines[i + 1].trim().startsWith('File ')) {
+                            errorGroup.push(lines[i + 1]);
+                        }
+                        break;
+                    }
+                }
+
+                // Standard patterns for other types of errors
+                if (line.trim().startsWith(' ') || line.trim().startsWith('\t') ||
+                    /^\s*at\s+/.test(line) || line.includes('Traceback') ||
+                    line.includes('File "') || line.includes('line ') ||
+                    line.trim().startsWith('at ') || line.includes('Exception:') ||
+                    line.includes('Error:') || /^\s+\w+/.test(line)) {
+                    errorGroup.push(line);
+                } else if (i === startIndex + 1 && !line.trim()) {
+                    // Include one blank line after error line if it exists
+                    errorGroup.push(line);
+                } else {
+                    // If we hit a non-indented, non-trace line and not in a traceback, stop collecting
+                    if (!isTraceback || traceDepth === 0) {
+                        break;
+                    }
+                }
+            }
+            return errorGroup;
+        }
+
+        // Function to filter logs based on the selected filter
+        function applyLogFilter() {
+            if (!allLogLines.length) return "Loading logs...";
+
+            const logContainer = document.getElementById('unified-log-content');
+            const isAtBottom = logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 50;
+            let filteredLines = [];
+
+            // Create a non-reversed copy of the log lines for error traces (to maintain chronological order)
+            const chronologicalLines = [...allLogLines].reverse();
+
+            switch (currentFilter) {
+                case 'error':
+                    // Find error lines and include their traces - use chronological order
+                    for (let i = 0; i < chronologicalLines.length; i++) {
+                        if (isErrorLine(chronologicalLines[i])) {
+                            const errorGroup = getErrorTraceGroup(chronologicalLines, i);
+                            filteredLines.push(...errorGroup.map(processLogLine));
+                            i += errorGroup.length - 1; // Skip the lines we've already processed
+                        }
+                    }
+                    // If no error lines were found, add a message
+                    if (filteredLines.length === 0) {
+                        filteredLines.push("No error messages found.");
+                    }
+                    break;
+                case 'db':
+                    filteredLines = allLogLines
+                        .filter(line => line.includes('[db]'))
+                        .map(processLogLine);
+                    if (filteredLines.length === 0) {
+                        filteredLines.push("No [db] logs found.");
+                    }
+                    break;
+                case 'commit':
+                    filteredLines = allLogLines
+                        .filter(line => line.includes('[db]') && line.toLowerCase().includes('commit'))
+                        .map(processLogLine);
+                    if (filteredLines.length === 0) {
+                        filteredLines.push("No commit logs found.");
+                    }
+                    break;
+                case 'checkpoint':
+                    filteredLines = allLogLines
+                        .filter(line => line.includes('[db]') && line.toLowerCase().includes('checkpoint'))
+                        .map(processLogLine);
+                    if (filteredLines.length === 0) {
+                        filteredLines.push("No checkpoint logs found.");
+                    }
+                    break;
+                case 'all':
+                default:
+                    filteredLines = allLogLines.map(processLogLine);
+                    if (filteredLines.length === 0) {
+                        filteredLines.push("No logs found.");
+                    }
+                    break;
+            }
+
+            if (filteredLines.length === 0) {
+                return `No ${currentFilter} logs found.`;
+            }
+
+            // Update log content
+            logContainer.innerHTML = filteredLines.join('\n');
+
+            // Auto-scroll if the user was already at the bottom
+            if (isAtBottom) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            return filteredLines.join('\n');
+        }
+
+        // Function to fetch and update log file
+        async function updateLog() {
+            try {
+                // Create a new request in the background
+                const timestamp = new Date().getTime();
+                const response = await fetch(`./log.txt?t=${timestamp}`);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch log: ${response.status} ${response.statusText}`);
+                }
+
+                const logText = await response.text();
+
+                // Store all non-empty log lines in reverse order (newest first)
+                allLogLines = logText.split('\n')
+                    .filter(line => line.trim() !== '')
+                    .reverse();
+
+                // Apply the current filter
+                applyLogFilter();
+
+                // Schedule next update
+                setTimeout(updateLog, 1000);
+            } catch (error) {
+                console.error('Error updating log:', error);
+                const logContainer = document.getElementById('unified-log-content');
+
+                const errorMsg = `Error loading log: ${error.message}. Retrying in 5 seconds...`;
+                logContainer.textContent = errorMsg;
+
+                setTimeout(updateLog, 5000);
+            }
+        }
+
+        // Function to fetch and update episode results table
+        async function updateEpisodeResults() {
+            try {
+                const timestamp = new Date().getTime();
+                const response = await fetch(`./logs/all_info.log?t=${timestamp}`);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch all_info.log: ${response.status} ${response.statusText}`);
+                }
+
+                const logText = await response.text();
+                const logLines = logText.split('\n').filter(line => line.trim() && line.trim().startsWith('{'));
+
+                // Parse each line as JSON
+                const episodes = logLines.map(line => {
+                    try {
+                        return JSON.parse(line);
+                    } catch (e) {
+                        console.error('Error parsing JSON line:', line, e);
+                        return null;
+                    }
+                }).filter(episode => episode !== null);
+
+                const tableBody = document.querySelector('#results-table tbody');
+
+                if (episodes.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="10">No episode data found</td></tr>';
+                    return;
+                }
+
+                // Calculate statistics
+                const stats = episodes.reduce((acc, episode) => {
+                    if (episode.habitat_success != null) {
+                        acc.totalSuccessRate += episode.habitat_success;
+                        acc.validEpisodeCount++;
+                    }
+                    if (typeof episode.spl === 'number' && !isNaN(episode.spl)) {
+                        acc.totalSpl += episode.spl;
+                        acc.validSplCount++;
+                    }
+                    if (typeof episode.soft_spl === 'number' && !isNaN(episode.soft_spl)) {
+                        acc.totalSoftSpl += episode.soft_spl;
+                        acc.validSoftSplCount++;
+                    }
+                    if (typeof episode.distance_to_goal === 'number' && !isNaN(episode.distance_to_goal)) {
+                        acc.totalDistance += episode.distance_to_goal;
+                        acc.validDistanceCount++;
+                    }
+                    if (typeof episode.count_steps === 'number' && !isNaN(episode.count_steps)) {
+                        acc.totalSteps += episode.count_steps;
+                        acc.validStepsCount++;
+                    }
+                    return acc;
+                }, {
+                    totalSuccessRate: 0,
+                    totalSpl: 0,
+                    totalSoftSpl: 0,
+                    totalDistance: 0,
+                    totalSteps: 0,
+                    validEpisodeCount: 0,
+                    validSplCount: 0,
+                    validSoftSplCount: 0,
+                    validDistanceCount: 0,
+                    validStepsCount: 0
+                });
+
+                const successRate = stats.validEpisodeCount > 0 ? stats.totalSuccessRate / stats.validEpisodeCount : 0;
+                const meanSpl = stats.validSplCount > 0 ? stats.totalSpl / stats.validSplCount : 0;
+                const meanSoftSpl = stats.validSoftSplCount > 0 ? stats.totalSoftSpl / stats.validSoftSplCount : 0;
+                const meanDistance = stats.validDistanceCount > 0 ? stats.totalDistance / stats.validDistanceCount : 0;
+                const meanSteps = stats.validStepsCount > 0 ? stats.totalSteps / stats.validStepsCount : 0;
+
+                // Update statistics display
+                document.getElementById('success-rate').textContent = `Success Rate: ${(successRate * 100).toFixed(2)}%`;
+                document.getElementById('mean-spl').textContent = `Mean SPL: ${meanSpl.toFixed(4)}`;
+                document.getElementById('episode-count').textContent = `Episodes: ${stats.validEpisodeCount}`;
+
+                let tableHtml = '';
+
+                // Add summary row with mean values
+                tableHtml += `
+                <tr style="background-color: #444; font-weight: bold;">
+                    <td>Mean</td>
+                    <td>${stats.validEpisodeCount}</td>
+                    <td class="${successRate > 0 ? 'success' : 'failure'}">${successRate.toFixed(4)}</td>
+                    <td>${meanDistance.toFixed(4)}</td>
+                    <td>-</td>
+                    <td>${meanSpl.toFixed(4)}</td>
+                    <td>${meanSoftSpl.toFixed(4)}</td>
+                    <td>-</td>
+                    <td>${meanSteps.toFixed(1)}</td>
+                    <td class="details-column${detailsVisible ? ' visible' : ''}">Summary Statistics</td>
+                </tr>`;
+
+                episodes.forEach(episode => {
+                    const mainKeys = ['episode', 'habitat_success', 'distance_to_goal', 'success', 'spl', 'soft_spl', 'target', 'count_steps'];
+                    let detailsHtml = '<ul style="margin: 0; padding-left: 20px;">';
+
+                    Object.keys(episode).forEach(key => {
+                        if (!mainKeys.includes(key)) {
+                            detailsHtml += `<li><strong>${key}:</strong> ${episode[key]}</li>`;
+                        }
+                    });
+
+                    detailsHtml += '</ul>';
+
+                    const videoPath = `./episodes_video/eps_${episode.episode}_vis.mp4`;
+                    tableHtml += `
+                    <tr>
+                        <td><a href="${videoPath}" target="_blank">Watch</a></td>
+                        <td>${episode.episode ?? 'N/A'}</td>
+                        <td class="${episode.habitat_success > 0 ? 'success' : 'failure'}">${episode.habitat_success ?? 'N/A'}</td>
+                        <td>${typeof episode.distance_to_goal === 'number' ? episode.distance_to_goal.toFixed(4) : 'N/A'}</td>
+                        <td>${episode.success ?? 'N/A'}</td>
+                        <td>${typeof episode.spl === 'number' ? episode.spl.toFixed(4) : 'N/A'}</td>
+                        <td>${typeof episode.soft_spl === 'number' ? episode.soft_spl.toFixed(4) : 'N/A'}</td>
+                        <td>${episode.target ?? 'N/A'}</td>
+                        <td>${episode.count_steps ?? 'N/A'}</td>
+                        <td class="details-column${detailsVisible ? ' visible' : ''}">${detailsHtml}</td>
+                    </tr>`;
+                });
+
+                tableBody.innerHTML = tableHtml;
+
+                setTimeout(updateEpisodeResults, 10000);
+            } catch (error) {
+                console.error('Error updating episode results:', error);
+                const tableBody = document.querySelector('#results-table tbody');
+                tableBody.innerHTML = `<tr><td colspan="10">Error loading episode data: ${error.message}. Retrying in 5 seconds...</td></tr>`;
+                setTimeout(updateEpisodeResults, 10000);
+            }
+        }
+
+        // Set up event listeners for filter buttons
+        function setupFilterButtons() {
+            const filterButtons = document.querySelectorAll('.filter-buttons > .filter-button');
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    // Set current filter based on button ID
+                    currentFilter = this.id.replace('filter-', '');
+
+                    // Apply the filter
+                    applyLogFilter();
+                });
+            });
+        }
+
+        // Initial update of all components
+        updateImages();
+        updateLog();
+        updateEpisodeResults();
+        setupFilterButtons();
+
+        // Add toggle details functionality
+        let detailsVisible = false;
+        document.getElementById('toggle-details').addEventListener('click', () => {
+            detailsVisible = !detailsVisible;
+            document.querySelectorAll('#results-table .details-column').forEach(cell => {
+                cell.classList.toggle('visible');
+            });
+            document.getElementById('toggle-details').textContent =
+                detailsVisible ? 'Hide Details' : 'Show Details';
+        });
+
+    </script>
+</body>
+
+</html>

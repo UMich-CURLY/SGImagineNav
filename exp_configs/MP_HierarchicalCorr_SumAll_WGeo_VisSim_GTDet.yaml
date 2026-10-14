@@ -1,0 +1,33 @@
+gpus: [0, 1, 2, 3]
+experiment_name: "[hierarcorr]mp3d_reasoning:obj_sg:node_score:sumall_wgeo_vissim_GTDET"
+script_name: "SG_Nav.py"
+config: "exp_configs/HierarchicalCorr_SumAll_WGeo_VisSim_GTDet.yaml"
+
+scenes:
+  - "q3zU7Yy5E5s"
+  - "mv2HUxq3B53"
+  - "wcojb4TFT35"
+  - "5cdEh9F2hJL"
+  - "6s7QHgap2fW"
+  - "mL8ThkuaVTM"
+  - "p53SfW6mjZe"
+  - "QaLdnwvtxbs"
+  - "4ok3usBNeis"
+  - "cvZr5TUy5C5"
+  - "TEEsavR23oF"
+  - "ziup5kvtCCR"
+  - "zt1RVoi7PcG"
+  - "Dd4bFSTQ8gi"
+  - "DYehNKdT76V"
+  - "bxsVRursffK"
+  - "qyAac8rV8Zk"
+  - "XB4GS9ShBRE"
+  - "svBbv1Pavdk"
+  - "Nfvxx8J5NCo"
+
+gpu_memory_threshold: 15  # In GB
+delay_check_time: 30  # In seconds
+timeout: 3600  # Timeout for each scene in seconds (1 hour)
+
+split_l: 0                   # Integer: Start index for splitting
+split_r: 16                  # Integer: End index for splitting

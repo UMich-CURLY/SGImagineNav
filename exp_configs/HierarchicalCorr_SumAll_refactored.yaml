@@ -1,0 +1,15 @@
+experiment_name: "[hierarcorr]hm3d_reasoning_refactored_GTPerception:MAX_SGPredScore_DET"
+evaluation: "local"          # Options: ["local", "remote"]
+reasoning: "both"            # Options: ["both", "room", "obj"]
+scenegraph: "node"           # Options: ["node", "both"]
+visualize: true             # Boolean flag
+split_l: 0                   # Integer: Start index for splitting
+split_r: 30                 # Integer: End index for splitting
+score_wo_room: false         # Boolean flag
+score_wo_graph: false        # Boolean flag
+score_wo_node: false         # Boolean flag
+log_file: true               # Boolean flag
+
+# Modules 
+perception_module: "SGNavPerception"
+planner_module: "ImagineNavPlanner"

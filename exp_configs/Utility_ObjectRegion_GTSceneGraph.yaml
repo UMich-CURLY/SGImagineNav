@@ -1,0 +1,35 @@
+experiment_name: "ObjectOnly_ExploitationOnly_ObservedOnly"
+evaluation: "local"          # Options: ["local", "remote"]
+reasoning: "both"            # Options: ["both", "room", "obj"]
+scenegraph: "node"           # Options: ["node", "both"]
+visualize: true             # Boolean flag
+split_l: 18                   # Integer: Start index for splitting
+split_r: 20                  # Integer: End index for splitting
+score_wo_room: false         
+score_wo_graph: false        # Boolean flag
+score_wo_node: false         # Boolean flag
+log_file: true
+
+# Modules 
+perception_module: "GTPerception"
+planner_module: "ImagineNavPlanner"
+
+# Utility function
+utility:
+  trade_off:
+    exploitation: 1.0
+    exploration: 1.0
+    distance: 0.0
+  hierarchical:
+    room: false             # Boolean flag
+    region: true           # Boolean flag
+    object: true           # Boolean flag
+    perception_conf: False   # Boolean flag
+  exploitation:
+    mode: "graph"
+  exploration:
+    mode: "raycast" # "graph", "map", "geometric"
+  prediction: True        # Boolean flag
+  gt_scene_graph: True        # Boolean flag
+  llm: "llama3.2-vision"
+  prediction_mode: "Global"

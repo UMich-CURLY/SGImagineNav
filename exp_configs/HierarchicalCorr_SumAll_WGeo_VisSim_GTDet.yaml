@@ -1,0 +1,11 @@
+experiment_name: "[hierarcorr]mp3d_reasoning:obj_sg:node_score:sumall_wgeo_vissim_GTDET"
+evaluation: "local"          # Options: ["local", "remote"]
+reasoning: "both"            # Options: ["both", "room", "obj"]
+scenegraph: "node"           # Options: ["node", "both"]
+visualize: true             # Boolean flag
+score_wo_room: false         # Boolean flag
+score_wo_graph: false        # Boolean flag
+score_wo_node: false         # Boolean flag
+score_w_geo: true         # Boolean flag
+vis_sim: true
+gt_semantics: true
